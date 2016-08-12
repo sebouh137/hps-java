@@ -41,7 +41,13 @@ import org.lcsim.recon.tracking.digitization.sisim.SiTrackerHitStrip1D;
 import org.lcsim.recon.tracking.digitization.sisim.TrackerHitType;
 
 // For adding ECal hits to HelicalTrackHits
-import org.hps.recon.tracking.ecal.HelicalTrack3DHit;
+//import org.hps.recon.tracking.ecal.HelicalTrack3DHit;
+import org.lcsim.fit.helicaltrack.HelicalTrackHit;
+import org.lcsim.fit.helicaltrack.HelicalTrack3DHit;
+import org.lcsim.geometry.subdetector.HPSEcal3;
+import org.lcsim.geometry.subdetector.HPSEcal3.NeighborMap;
+import org.lcsim.event.CalorimeterHit;
+import org.lcsim.event.Cluster;
 
 /**
  * Driver used to create stereo hits from clusters.
@@ -63,6 +69,7 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
     private double maxDt = -99; // max time difference between the two hits in a cross
     private double clusterAmplitudeCut = -99; // cluster amplitude cut
     private String _subdetectorName = "Tracker";
+  //  private String _subdetectorName2 = "";
     private final Map<String, String> _stereomap = new HashMap<String, String>();
     private List<SvtStereoLayer> stereoLayers = null;
     private final List<String> _colnames = new ArrayList<String>();
@@ -71,6 +78,10 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
     private final String _axialname = "AxialTrackHits";
     private final String _axialmcrelname = "AxialTrackHitsMCRelations";
     private boolean rejectGhostHits = false;
+
+    // ECal cluster collection in event to create helicalTrackHits from
+    private final String _ecalclustername = "EcalClustersCorr";
+
 
     public enum LayerGeometryType {
 
@@ -219,8 +230,8 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
 
 /////// For making HelicalTrackHits out of ECal hits
 //*****
-        List<HelicalTrack3DHit> ecalhits = new ArrayList<>();
-        List<LCRelation> ecalmcrelations = new ArrayList<LCRelation>();
+        List<HelicalTrack3DHit> helicalecalhits = new ArrayList<>();
+        List<LCRelation> helicalecalmcrelations = new ArrayList<LCRelation>();
 //*****
 ////////////////
 
@@ -288,9 +299,9 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
                 } else {
                     // If not a 1D strip hit, make a pixel hit
                     // This should be removed as it is never used.
-                    HelicalTrackHit hit3d = this.makeDigi3DHit(hit);
-                    helhits.add(hit3d);
-                    hitrelations.add(new MyLCRelation(hit3d, hit));
+                  //  HelicalTrackHit hit3d = this.makeDigi3DHit(hit);
+                  //  helhits.add(hit3d);
+                  //  hitrelations.add(new MyLCRelation(hit3d, hit));
                 }
             }
 
@@ -460,23 +471,66 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
                 System.out.printf("%s: added %d stereo hits from %s collection \n", this.getClass().getSimpleName(), helicalTrackCrosses.size(), _colname);
             }
 
-    /*  
+    /*  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     *  
      *  Look for ECal hits in the event to add to HelicalTrackHits
      *  These are HelicalTrack3DHits rather than HelicalTrack2DHits
      * 
      **/
-    //        if (!event.hasCollection(CalorimeterHit.class, _colname)) {
-    //            if (_debug) {
-    //                System.out.println("Event: " + event.getRunNumber() + " does not contain the collection " + _colname);
-    //            }
-    //            continue;
-    //        }
+//            if (!event.hasCollection(Cluster.class, _colname)) {
+//                if (_debug) {
+//                    System.out.println("Event: " + event.getRunNumber() + " does not contain the collection " + _colname);
+//                }
+//                continue;
+//            }
+
+           // List<Cluster> clusters = event.get(Cluster.class, _colname);
+            
+//            List<Cluster> clusters = event.get(Cluster.class, _ecalclustername);
+//            if (_debug) {
+//                System.out.printf("%s: found %d Clusters\n", this.getClass().getSimpleName(), clusters.size());
+//            }
+ 
+//            for (Cluster EcalCluster : clusters) {
+
+//            HelicalTrackHit ecal_hit3d = this.makeEcal3DHit(EcalCluster);
+//            helhits.add(ecal_hit3d);
+//            hitrelations.add(new MyLCRelation(ecal_hit3d, EcalCluster));
+//           }
 
 
 
+         /*
+            List<CalorimeterHit> ecalhitlist;
+            for (Cluster cluster : clusters) {
+             
+                if(cluster.getCalorimeterHits().size() != isEmpty()){
+ 
 
 
 
+                }
+            }
+            List<CalorimeterHit> ecalhitlist = event.get(Cluster.class, _colname).getCalorimeterHits();
+          //  List<Cluster> ecalhitlist = event.get(Cluster.class, _colname);
+            if (_debug) {
+                System.out.printf("%s: found %d Clusters\n", this.getClass().getSimpleName(), ecalhitlist.size());
+            }
+
+           for (Cluster ecal_hit : ecalhitlist) {
+
+            HelicalTrackHit ecal_hit3d = this.makeEcal3DHit(ecal_hit);
+            helhits.add(ecal_hit3d);
+            hitrelations.add(new MyLCRelation(ecal_hit3d, ecal_hit));
+           }
+          */
+
+    /*
+ *
+ *   ECAL HITS !!!!!!!!!!!!!!!
+ *   
+ *
+ **/
 
 
 
@@ -570,6 +624,30 @@ public class ECAL_HelicalTrackHitDriver extends org.lcsim.fit.helicaltrack.Helic
         }
 
     }
+
+   /*  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    *  
+    *  Make HelicalTrack3DHits from ECal Clusters
+    *
+    *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    */ 
+
+//    private HelicalTrackHit makeEcal3DHit(Cluster c) {
+//private void makeEcal3DHit(Cluster c) {
+
+     //   double z1 = h.getHitSegment().getEndPoint().x();
+     //   double z2 = h.getHitSegment().getStartPoint().x();//x is the non-bend direction in the JLAB frame
+     //   double zmin = Math.min(z1, z2); TODO: DETERMINE WHAT THIS NEEDS TO BE SET TO, USING THE ACTUAL GEOMETRY CLASSES
+     //   double zmax = Math.max(z1, z2);
+//        IDetectorElement de = c.getCalorimeterHits().get(0).getDetectorElement();
+
+//HelicalTrack3DHit ecal_hit = new HelicalTrack3DHit();
+//        HelicalTrackHit ecal_hit = new HelicalTrackHit(c.getCalorimeterHits().get(0).getPositionVec(),
+//                Matrix(c.getPositionError()), c.getEnergy(), c.getCalorimeterHits().get(0).getTime(),
+//                null, _ID.getName(de), _ID.getLayer(de), _ID.getBarrelEndcapFlag(de));
+
+//        return ecal_hit;
+//    }
 
     /*
      *  Make  HelicalTrack2DHits from SiTrackerHitStrip1D...note that these HelicalTrack2DHits

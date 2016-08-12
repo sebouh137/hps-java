@@ -39,6 +39,10 @@ import org.lcsim.fit.helicaltrack.HelixUtils;
 import org.lcsim.recon.tracking.digitization.sisim.SiTrackerHitStrip1D;
 import org.lcsim.recon.tracking.digitization.sisim.TrackerHitType;
 
+// 4 ECal
+import org.lcsim.event.Cluster;
+
+
 /**
  * Utilities that create track objects from fitted GBL trajectories.
  *
@@ -292,6 +296,7 @@ public class MakeGblTracks {
      * (not covariance)
      * @param stripHits Strip hits to be used for the GBL fit. Does not need to
      * be in sorted order.
+     * @param clusters ECal clusters to be used in GBL fit
      * @param hth Stereo hits for the track's hit list (these are not used in
      * the GBL fit). Does not need to be in sorted order.
      * @param nIterations Number of times to iterate the GBL fit.
@@ -299,6 +304,7 @@ public class MakeGblTracks {
      * @param bfield B-field
      * @return The refitted track.
      */
+// Old refitTrack (still used if no clusters are present)
     public static Pair<Track, GBLKinkData> refitTrack(HelicalTrackFit helix, Collection<TrackerHit> stripHits, Collection<TrackerHit> hth, int nIterations, int trackType, MultipleScattering scattering, double bfield) {
         List<TrackerHit> allHthList = TrackUtils.sortHits(hth);
         List<TrackerHit> sortedStripHits = TrackUtils.sortHits(stripHits);
@@ -312,6 +318,21 @@ public class MakeGblTracks {
         return mergedTrack;
     }
 
+// Overloaded to fit using ECal clusters via 'doGBLFit'
+    public static Pair<Track, GBLKinkData> refitTrack(HelicalTrackFit helix, Collection<TrackerHit> stripHits, Collection<TrackerHit> hth, List<Cluster> clusters, int nIterations, int trackType, MultipleScattering scattering, double bfield) {
+        List<TrackerHit> allHthList = TrackUtils.sortHits(hth);
+        List<TrackerHit> sortedStripHits = TrackUtils.sortHits(stripHits);
+        FittedGblTrajectory fit = doGBLFit(helix, sortedStripHits, scattering, bfield, 0);
+        for (int i = 0; i < nIterations; i++) {
+            Pair<Track, GBLKinkData> newTrack = makeCorrectedTrack(fit, helix, allHthList, trackType, bfield);
+            helix = TrackUtils.getHTF(newTrack.getFirst());
+            fit = doGBLFit(helix, sortedStripHits, clusters, scattering, bfield, 0);
+        }
+        Pair<Track, GBLKinkData> mergedTrack = makeCorrectedTrack(fit, helix, allHthList, trackType, bfield);
+        return mergedTrack;
+    } 
+
+// Old GBL fit
     public static FittedGblTrajectory doGBLFit(HelicalTrackFit htf, List<TrackerHit> stripHits, MultipleScattering _scattering, double bfield, int debug) {
         List<GBLStripClusterData> stripData = makeStripData(htf, stripHits, _scattering, bfield, debug);
         double bfac = Constants.fieldConversion * bfield;
@@ -320,6 +341,16 @@ public class MakeGblTracks {
         return fit;
     }
 
+// Overloaded GBL fit using ECal clusters via 'makeStripData'
+    public static FittedGblTrajectory doGBLFit(HelicalTrackFit htf, List<TrackerHit> stripHits, List<Cluster> clusters, MultipleScattering _scattering, double bfield, int debug) {
+        List<GBLStripClusterData> stripData = makeStripData(htf, stripHits, _scattering, bfield, debug);
+        double bfac = Constants.fieldConversion * bfield;
+
+        FittedGblTrajectory fit = HpsGblRefitter.fit(stripData, bfac, debug > 0);
+        return fit;
+    }
+
+// Old makeStripData
     public static List<GBLStripClusterData> makeStripData(HelicalTrackFit htf, List<TrackerHit> stripHits, MultipleScattering _scattering, double _B, int _debug) {
         List<GBLStripClusterData> stripClusterDataList = new ArrayList<GBLStripClusterData>();
 
@@ -435,6 +466,185 @@ public class MakeGblTracks {
         }
         return stripClusterDataList;
     }
+
+// Overloaded makeStripData to make "GBLStripClusterData" out of ECal clusters
+     public static List<GBLStripClusterData> makeStripData(HelicalTrackFit htf, List<TrackerHit> stripHits, List<Cluster> clusters, MultipleScattering _scattering, double _B, int _debug) {
+        List<GBLStripClusterData> stripClusterDataList = new ArrayList<GBLStripClusterData>();
+
+        // Find scatter points along the path
+        MultipleScattering.ScatterPoints scatters = _scattering.FindHPSScatterPoints(htf);
+
+        if (_debug > 0) {
+            System.out.printf("perPar covariance matrix\n%s\n", htf.covariance().toString());
+        }
+
+        for (TrackerHit stripHit : stripHits) {
+            HelicalTrackStripGbl strip;
+            if (stripHit instanceof SiTrackerHitStrip1D) {
+                strip = new HelicalTrackStripGbl(makeDigiStrip((SiTrackerHitStrip1D) stripHit), true);
+            } else {
+                SiTrackerHitStrip1D newHit = new SiTrackerHitStrip1D(stripHit);
+                strip = new HelicalTrackStripGbl(makeDigiStrip(newHit), true);
+            }
+
+            // find Millepede layer definition from DetectorElement
+            HpsSiSensor sensor = (HpsSiSensor) ((RawTrackerHit) stripHit.getRawHits().get(0)).getDetectorElement();
+
+            int millepedeId = sensor.getMillepedeId();
+
+            if (_debug > 0) {
+                System.out.printf("layer %d millepede %d (DE=\"%s\", origin %s) \n", strip.layer(), millepedeId, sensor.getName(), strip.origin().toString());
+            }
+
+            //Center of the sensor
+            Hep3Vector origin = strip.origin();
+
+            //Find intercept point with sensor in tracking frame
+            Hep3Vector trkpos = TrackUtils.getHelixPlaneIntercept(htf, strip, Math.abs(_B));
+            if (trkpos == null) {
+                if (_debug > 0) {
+                    System.out.println("Can't find track intercept; use sensor origin");
+                }
+                trkpos = strip.origin();
+            }
+            if (_debug > 0) {
+                System.out.printf("trkpos at intercept [%.10f %.10f %.10f]\n", trkpos.x(), trkpos.y(), trkpos.z());
+            }
+
+            //GBLDATA
+            GBLStripClusterData stripData = new GBLStripClusterData(millepedeId);
+            //Add to output list
+            stripClusterDataList.add(stripData);
+
+            //path length to intercept
+            double s = HelixUtils.PathToXPlane(htf, trkpos.x(), 0, 0).get(0);
+            double s3D = s / Math.cos(Math.atan(htf.slope()));
+
+            //GBLDATA
+            stripData.setPath(s);
+            stripData.setPath3D(s3D);
+
+            //GBLDATA
+            stripData.setU(strip.u());
+            stripData.setV(strip.v());
+            stripData.setW(strip.w());
+
+            //Print track direction at intercept
+            Hep3Vector tDir = HelixUtils.Direction(htf, s);
+            double phi = htf.phi0() - s / htf.R();
+            double lambda = Math.atan(htf.slope());
+
+            //GBLDATA
+            stripData.setTrackDir(tDir);
+            stripData.setTrackPhi(phi);
+            stripData.setTrackLambda(lambda);
+
+            //Print residual in measurement system
+            // start by find the distance vector between the center and the track position
+            Hep3Vector vdiffTrk = VecOp.sub(trkpos, origin);
+
+            // then find the rotation from tracking to measurement frame
+            Hep3Matrix trkToStripRot = getTrackToStripRotation(sensor);
+
+            // then rotate that vector into the measurement frame to get the predicted measurement position
+            Hep3Vector trkpos_meas = VecOp.mult(trkToStripRot, vdiffTrk);
+
+            //GBLDATA
+            stripData.setMeas(strip.umeas());
+            stripData.setTrackPos(trkpos_meas);
+            stripData.setMeasErr(strip.du());
+
+            if (_debug > 1) {
+                System.out.printf("rotation matrix to meas frame\n%s\n", VecOp.toString(trkToStripRot));
+                System.out.printf("tPosGlobal %s origin %s\n", trkpos.toString(), origin.toString());
+                System.out.printf("tDiff %s\n", vdiffTrk.toString());
+                System.out.printf("tPosMeas %s\n", trkpos_meas.toString());
+            }
+
+            if (_debug > 0) {
+                System.out.printf("layer %d millePedeId %d uRes %.10f\n", strip.layer(), millepedeId, stripData.getMeas() - stripData.getTrackPos().x());
+            }
+
+            // find scattering angle
+            MultipleScattering.ScatterPoint scatter = scatters.getScatterPoint(((RawTrackerHit) strip.getStrip().rawhits().get(0)).getDetectorElement());
+            double scatAngle;
+
+            if (scatter != null) {
+                scatAngle = scatter.getScatterAngle().Angle();
+            } else {
+                if (_debug > 0) {
+                    System.out.printf("WARNING cannot find scatter for detector %s with strip cluster at %s\n", ((RawTrackerHit) strip.getStrip().rawhits().get(0)).getDetectorElement().getName(), strip.origin().toString());
+                }
+                scatAngle = GblUtils.estimateScatter(sensor, htf, _scattering, _B);
+            }
+
+            //GBLDATA
+            stripData.setScatterAngle(scatAngle);
+        }
+        
+        // *** Now loop over clusters and mock up GBLStripClusterData for them!~<3 ***
+        for (Cluster cluster : clusters) {
+
+                // This sets a BS Millipede ID (0) for the ECal...
+        	GBLStripClusterData ECal_stripData = new GBLStripClusterData(666);
+            	//Add ECal strips to the output list
+            	stripClusterDataList.add(ECal_stripData);
+ 
+
+        // TRANSLATE ALL THIS GBLStripClusterData STUFF INTO ECAL, USING CLUSTERS!!!!
+
+                //path length to intercept
+          //      double s = HelixUtils.PathToXPlane(htf, trkpos.x(), 0, 0).get(0);
+          //      double s3D = s / Math.cos(Math.atan(htf.slope()));
+      
+                 //GBLDATA
+          //     ECal_stripData.setPath(s);
+          //     ECal_stripData.setPath3D(s3D);
+          
+               double ecal_x = cluster.getPosition()[0];
+               double ecal_y = cluster.getPosition()[1];
+               double ecal_z = cluster.getPosition()[2];
+
+          //     //GBLDATA
+          //     ECal_stripData.setU(strip.u());
+          //     ECal_stripData.setV(strip.v());
+          //     ECal_stripData.setW(strip.w());
+               
+                 //Print track direction at intercept
+          //     Hep3Vector tDir = HelixUtils.Direction(htf, s);
+          //     double phi = htf.phi0() - s / htf.R();
+          //     double lambda = Math.atan(htf.slope());
+          
+          //     //GBLDATA
+          //     ECal_stripData.setTrackDir(tDir);
+          //     ECal_stripData.setTrackPhi(phi);
+          //     ECal_stripData.setTrackLambda(lambda);
+
+                 //Print residual in measurement system
+                 //Start by find the distance vector between the center and the track position
+          //     Hep3Vector vdiffTrk = VecOp.sub(trkpos, origin);
+          
+                 // then find the rotation from tracking to measurement frame
+          //     Hep3Matrix trkToStripRot = getTrackToStripRotation(sensor);
+
+                 // then rotate that vector into the measurement frame to get the predicted measurement position
+          //     Hep3Vector trkpos_meas = VecOp.mult(trkToStripRot, vdiffTrk);
+               
+                 //GBLDATA
+          //     ECal_stripData.setMeas(strip.umeas());
+          //     ECal_stripData.setTrackPos(trkpos_meas);
+          //     ECal_stripData.setMeasErr(strip.du());
+        
+                 // No Scat for ECal
+                 ECal_stripData.setScatterAngle(0);
+
+        }
+
+
+
+        return stripClusterDataList;
+    }
+
 
     private static Hep3Matrix getTrackToStripRotation(SiSensor sensor) {
         // This function transforms the hit to the sensor coordinates
