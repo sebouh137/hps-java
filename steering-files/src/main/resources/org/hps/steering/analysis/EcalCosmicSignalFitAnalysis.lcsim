@@ -6,6 +6,8 @@
         <driver name="DualThresholdSignalFitDriver"/>
         <!-- Convert to CalorimeterHit collection. -->
         <driver name="EcalRawConverterDriver"/>
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <!-- Create MIP clusters from selected hits. -->
         <driver name="DualThresholdCosmicClusterDriver"/>
         <driver name="LCIODriver"/>
@@ -23,9 +25,18 @@
         </driver>
         <driver name="EcalRawConverterDriver" type="org.hps.recon.ecal.EcalRawConverterDriver">
             <rawCollectionName>LooseEcalCosmicReadoutHits</rawCollectionName>
-            <ecalCollectionName>LooseEcalCosmicCalHits</ecalCollectionName>
-            <use2014Gain>false</use2014Gain>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
+            
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>LooseEcalCosmicCalHits</outputHitsCollectionName>
+        </driver> 
         <driver name="DualThresholdCosmicClusterDriver" type="org.hps.recon.ecal.cluster.DualThresholdCosmicClusterDriver"> 
             <logLevel>FINEST</logLevel>
             <skipNoClusterEvents>true</skipNoClusterEvents>

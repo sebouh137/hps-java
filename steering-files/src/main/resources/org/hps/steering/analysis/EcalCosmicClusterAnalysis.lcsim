@@ -6,6 +6,8 @@
         <driver name="RawModeHitSelectionDriver"/>
         <!-- Convert to CalorimeterHit collection. -->
         <driver name="EcalRawConverterDriver"/>
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <!-- Create MIP clusters from selected hits. -->
         <driver name="CosmicClusterDriver"/>
         <!-- Create profiles and fits from cluster data. -->
@@ -23,8 +25,16 @@
         </driver>
         <driver name="EcalRawConverterDriver" type="org.hps.recon.ecal.EcalRawConverterDriver">
             <rawCollectionName>EcalCosmicReadoutHits</rawCollectionName>
-            <ecalCollectionName>EcalCosmicCalHits</ecalCollectionName>
+            <ecalCollectionName>EcalCosmicUncalHits</ecalCollectionName>
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCosmicCalHits</outputHitsCollectionName>
+        </driver>  
         <driver name="CosmicClusterDriver" type="org.hps.recon.ecal.cluster.ClusterDriver">
             <clustererName>SimpleCosmicClusterer</clustererName>
             <inputHitCollectionName>EcalCosmicCalHits</inputHitCollectionName>
