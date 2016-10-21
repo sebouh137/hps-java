@@ -10,6 +10,8 @@
         <driver name="BadChannelFilter" />
         <driver name="EcalReadout" />
         <driver name="EcalConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalTriggerFilter" />
         <driver name="EcalClusterer" />
         <driver name="EcalTrigger" />
@@ -46,9 +48,17 @@
         </driver>
         <driver name="EcalConverter" type="org.hps.recon.ecal.EcalConverterDriver">
             <rawCollectionName>EcalRawHits</rawCollectionName>
-            <ecalCollectionName>EcalCorrectedHits</ecalCollectionName>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <scale>1</scale>
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName> 
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCorrectedHits</outputHitsCollectionName>
+        </driver>   
         <driver name="EcalTriggerFilter" type="org.hps.recon.ecal.EcalTriggerFilterDriver">
             <inputCollection>EcalCorrectedHits</inputCollection>
             <outputCollection>EcalFilteredHits</outputCollection>

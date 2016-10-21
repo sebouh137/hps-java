@@ -2,6 +2,8 @@
     <execute>
         <driver name="EventMarkerDriver" />
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClusterer" />
         <driver name="SVTOccupancyPlots" />
         <driver name="RawTrackerHitFitterDriver" />
@@ -13,9 +15,19 @@
     </execute>
     <drivers>
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
-            <use2014Gain>false</use2014Gain>
+             
+        	<ecalCollectionName>EcalUncalHits</ecalCollectionName>
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver>  
+        
         <driver name="EcalClusterer" type="org.hps.recon.ecal.cluster.GTPOnlineClusterDriver">
             <verbose>false</verbose>
             <logLevel>WARNING</logLevel>

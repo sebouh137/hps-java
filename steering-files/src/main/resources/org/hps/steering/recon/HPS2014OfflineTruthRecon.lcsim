@@ -14,6 +14,8 @@
         <driver name="HelicalTrackHitDriver"/>
         <driver name="TrackerReconDriver"/>
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClusterer" />
         <driver name="ReconParticle" />
         <driver name="TrackDataDriver" />        
@@ -61,11 +63,19 @@
         </driver>
 
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <use2014Gain>true</use2014Gain>
             <useTimestamps>false</useTimestamps>
             <useTruthTime>true</useTruthTime>
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName> 
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver>   
         <driver name="EcalClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <useTimeCut>true</useTimeCut>
         </driver>

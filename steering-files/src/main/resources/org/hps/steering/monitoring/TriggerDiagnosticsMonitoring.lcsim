@@ -4,6 +4,8 @@
         <driver name="ConditionsDriver"/>
         <driver name="DAQConfig"/>
         <driver name="EcalRawConverter"/>
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="GTPTestDriver"/>
         <driver name="TriggerDiagnostics"/>
         <!--
@@ -21,12 +23,9 @@
         </driver>        
         <driver name="DAQConfig" type="org.hps.record.daqconfig.DAQConfigDriver"/>
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
-            <use2014Gain>false</use2014Gain>
             <useTimestamps>false</useTimestamps>
             <useTruthTime>false</useTruthTime>
             <useRunningPedestal>false</useRunningPedestal>
-            <useTimeWalkCorrection>false</useTimeWalkCorrection>
             <emulateFirmware>true</emulateFirmware>
             <emulateMode7>false</emulateMode7>
             <leadingEdgeThreshold>12</leadingEdgeThreshold>
@@ -34,7 +33,18 @@
             <nsa>100</nsa>
             <nsb>20</nsb>
             <nPeak>3</nPeak>
-        </driver>        
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
+        </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <useTimeWalkCorrection>false</useTimeWalkCorrection>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver> 
         <driver name="GTPTestDriver" type="org.hps.recon.ecal.cluster.GTPOnlineClusterDriver">
             <inputHitCollectionName>EcalCalHits</inputHitCollectionName>
             <!-- <seedEnergyThreshold>0.500</seedEnergyThreshold>

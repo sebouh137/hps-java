@@ -10,6 +10,8 @@
         <!--  Readout Simulation -->
         <driver name="EcalReadout"/>
         <driver name="EcalConverter"/>
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClustererGTP"/>
         <driver name="SinglesTrigger1"/>
         <driver name="SimpleSVTReadout" />
@@ -44,12 +46,20 @@
         </driver>
         <driver name="EcalConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
             <rawCollectionName>EcalRawHits</rawCollectionName>
-            <ecalCollectionName>EcalCorrectedHits</ecalCollectionName>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <applyBadCrystalMap>false</applyBadCrystalMap>
             <nsa>100</nsa>
             <nsb>20</nsb>
-            <use2014Gain>false</use2014Gain> 
         </driver>   
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCorrectedHits</outputHitsCollectionName>
+        </driver>  
         <driver name="EcalClustererGTP" type="org.hps.recon.ecal.cluster.GTPClusterDriver">
             <!--
             Hit Time Coincidence:         +/-16 ns

@@ -13,6 +13,7 @@
         <!-- Ecal reconstruction drivers -->        
         <driver name="EcalRunningPedestal"/>
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
         <driver name="EcalTimeCorrection"/>
         <driver name="ReconClusterer" />
         <driver name="CopyCluster" />
@@ -71,11 +72,20 @@
         <driver name="EcalRunningPedestal" type="org.hps.recon.ecal.EcalRunningPedestalDriver">
             <logLevel>CONFIG</logLevel>
         </driver>
-        <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverter2Driver">
-        </driver> 
-        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver"/> 
+        <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
+        	<ecalCollectionName>EcalUncalHits</ecalCollectionName>
+        </driver>  
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver>
         <driver name="ReconClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <logLevel>WARNING</logLevel>
+            <inputHitCollectionName>EcalCalHits</inputHitCollectionName>
             <outputClusterCollectionName>EcalClusters</outputClusterCollectionName>
         </driver> 
         <driver name="CopyCluster" type="org.hps.recon.ecal.cluster.CopyClusterCollectionDriver">

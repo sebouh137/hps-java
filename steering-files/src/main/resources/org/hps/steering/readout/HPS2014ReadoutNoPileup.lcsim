@@ -32,11 +32,11 @@
             <constantGain>0.15</constantGain>
         </driver>
         <driver name="EcalReadoutConverterDriver" type="org.hps.recon.ecal.EcalRawConverterDriver">                              
-            <use2014Gain>false</use2014Gain> 
-            <runBackwards>true</runBackwards>
+           <runBackwards>true</runBackwards>
             <rawCollectionName>EcalReadoutHits</rawCollectionName>           
             <ecalCollectionName>EcalReadoutAnalogHits</ecalCollectionName>
         </driver>
+         
         <driver name="EcalTriggerClusterer" type="org.hps.recon.ecal.cluster.GTPClusterDriver">
             <clusterWindow>0</clusterWindow>            
             <inputHitCollectionName>EcalReadoutAnalogHits</inputHitCollectionName>

@@ -2,6 +2,8 @@
     <execute>
         <driver name="EventMarkerDriver" />
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalTriggerFilter" />
         <driver name="EcalClusterer" />
 <!--        <driver name="EcalPedestalPlots"/>-->
@@ -26,7 +28,17 @@
             <dropBadFADC>true</dropBadFADC>
             <tp>14.0</tp>
             <truncateScale>1</truncateScale>
+        	<ecalCollectionName>EcalUncalHits</ecalCollectionName>
         </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver>  
+        
         <driver name="EcalTriggerFilter" type="org.hps.recon.ecal.EcalTriggerFilterDriver">
             <inputCollection>EcalCalHits</inputCollection>
             <outputCollection>EcalFilteredHits</outputCollection>

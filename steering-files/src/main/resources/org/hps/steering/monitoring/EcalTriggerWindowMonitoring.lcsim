@@ -3,6 +3,8 @@
         <driver name="EventMarkerDriver" />
         <driver name="FADCConverter" />
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClusterer" />
         <!-- <driver name="EcalIntegralPedestalPlots" />  -->
         <driver name="EcalMonitoringPlots" />
@@ -24,9 +26,19 @@
             <!--<integralWindow>35</integralWindow> Deprecated, now use the equivalent in NSA/NSB-->
             <nsa>120</nsa>
             <nsb>20</nsb>
+            
+        	<ecalCollectionName>EcalUncalHits</ecalCollectionName>
+        </driver>
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
             <gain>1.0</gain>
             <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
         </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver> 
         <driver name="EcalDaqPlots" type="org.hps.monitoring.ecal.plots.EcalDaqPlots">
         </driver>
         <driver name="EcalMonitoringPlots" type="org.hps.monitoring.ecal.plots.EcalMonitoringPlots">

@@ -20,6 +20,8 @@
         <driver name="EcalRunningPedestal"/>
         <driver name="RfFitter"/>
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="ReconClusterer" />
         <driver name="GTPOnlineClusterer" />
         <driver name="LCIOWriter" />
@@ -41,11 +43,21 @@
             <maxLookbackEvents>50</maxLookbackEvents>
         </driver>
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <use2014Gain>false</use2014Gain>
             <useTimestamps>false</useTimestamps>
             <useTruthTime>false</useTruthTime>
             <useRunningPedestal>false</useRunningPedestal>
+        </driver>       
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName> 
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <useTimeWalkCorrection>true</useTimeWalkCorrection>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
         </driver>       
         <driver name="ReconClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <logLevel>WARNING</logLevel>

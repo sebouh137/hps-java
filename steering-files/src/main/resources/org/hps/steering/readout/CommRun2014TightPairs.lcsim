@@ -11,6 +11,8 @@
         <driver name="EventMarkerDriver"/>          
         <driver name="EcalReadout"/>
         <driver name="EcalConverter"/>
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClusterer"/>
         <driver name="PairTrigger1"/>
         <driver name="TestRunReconToLcio"/>
@@ -40,11 +42,19 @@
         </driver>
         <driver name="EcalConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
             <rawCollectionName>EcalRawHits</rawCollectionName>
-            <ecalCollectionName>EcalCorrectedHits</ecalCollectionName>
-            <applyBadCrystalMap>false</applyBadCrystalMap>
-            <use2014Gain>false</use2014Gain>      
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
+            <applyBadCrystalMap>false</applyBadCrystalMap>      
             <debug>true</debug>
         </driver>   
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCorrectedHits</outputHitsCollectionName>
+        </driver>  
         <driver name="EcalClusterer" type="org.hps.recon.ecal.cluster.GTPClusterDriver">
             <inputHitCollectionName>EcalCorrectedHits</inputHitCollectionName>
             <clusterWindow>1</clusterWindow>

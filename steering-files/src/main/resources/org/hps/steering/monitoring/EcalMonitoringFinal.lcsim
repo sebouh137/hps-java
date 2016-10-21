@@ -2,6 +2,8 @@
     <execute>
         <driver name="EcalRawConverter" />
         <driver name="EcalClusterer" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="EcalMonitoringPlots" />      <!-- General plots -->
         <driver name="EcalHitPlots" />             <!-- Single hit distributions -->
         <driver name="EcalClusterPlots" />         <!-- Clusters distributions -->
@@ -20,12 +22,10 @@
         </driver>
         
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
-            <use2014Gain>false</use2014Gain>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <useTimestamps>false</useTimestamps>
             <useTruthTime>false</useTruthTime>
             <useRunningPedestal>false</useRunningPedestal>
-            <useTimeWalkCorrection>false</useTimeWalkCorrection>
             <emulateFirmware>true</emulateFirmware>
             <emulateMode7>false</emulateMode7>
             <leadingEdgeThreshold>12</leadingEdgeThreshold>
@@ -33,7 +33,16 @@
             <nsb>20</nsb>
             <nPeak>3</nPeak>
         </driver>
-        
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <useTimeWalkCorrection>false</useTimeWalkCorrection>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver> 
 
         <driver name="EcalClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <logLevel>WARNING</logLevel>

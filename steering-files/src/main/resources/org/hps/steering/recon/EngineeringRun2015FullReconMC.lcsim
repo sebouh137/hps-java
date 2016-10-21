@@ -12,8 +12,11 @@
         <driver name="ConditionsDriver"/>
         <driver name="EventMarkerDriver"/>
         <driver name="RfFitter"/>
-        <!-- Ecal reconstruction drivers -->        
+        <!-- Ecal reconstruction drivers -->    
+        
         <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="ReconClusterer" />
         <driver name="GTPOnlineClusterer" />
         <driver name="CopyCluster" />
@@ -122,10 +125,20 @@
         </driver>       
         <driver name="MergeTrackCollections" type="org.hps.recon.tracking.MergeTrackCollections" />
         <driver name="GBLRefitterDriver" type="org.hps.recon.tracking.gbl.GBLRefitterDriver"/>
+        
+        
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
+        	<ecalCollectionName>EcalUncalHits</ecalCollectionName>
             <fixShapeParameter>true</fixShapeParameter>
             <globalFixedPulseWidth>2.4</globalFixedPulseWidth>
+        </driver>  
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
         </driver>       
         <driver name="ReconClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <logLevel>WARNING</logLevel>

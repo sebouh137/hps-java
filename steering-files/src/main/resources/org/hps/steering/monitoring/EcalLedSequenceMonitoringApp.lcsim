@@ -3,7 +3,9 @@
     <execute>
         <driver name="EventMarkerDriver"/>
         <driver name="EcalRunningPedestal"/>
-        <driver name="EcalRawConverter" />    
+        <driver name="EcalRawConverter" />
+        <driver name="EcalGains"/>
+        <driver name="EcalTimeCorrection"/>
         <driver name="LedAnalysisDriver"/>
         <driver name="EcalEventDisplay" />         <!-- Ecal event display -->
         <driver name="AidaSaveDriver"/>
@@ -17,14 +19,22 @@
             <maxLookbackEvents>50</maxLookbackEvents>
         </driver>
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
-            <ecalCollectionName>EcalCalHits</ecalCollectionName>
-            <use2014Gain>false</use2014Gain>
+            <ecalCollectionName>EcalUncalHits</ecalCollectionName>
+            
             <useTimestamps>false</useTimestamps>
             <useTruthTime>false</useTruthTime>
             <useRunningPedestal>true</useRunningPedestal>
+            </driver>       
+        <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
+       		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
+            <use2014Gain>false</use2014Gain>
+            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
+        </driver>
+        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
+       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
             <useTimeWalkCorrection>true</useTimeWalkCorrection>
-        </driver>       
-        
+            <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
+        </driver> 
           <driver name="EcalEventDisplay" type="org.hps.monitoring.ecal.plots.EcalEventDisplay">
             <inputCollection>EcalCalHits</inputCollection>
             <inputCollectionRaw>EcalReadoutHits</inputCollectionRaw>
