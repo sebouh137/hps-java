@@ -18,12 +18,13 @@ import org.lcsim.lcio.LCIOConstants;
 import org.lcsim.util.Driver;
 
 /**
- * This <code>Driver</code> converts raw ECal data collections to {@link org.lcsim.event.CalorimeterHit} collections 
- * with energy and time information.  The {@link EcalRawConverter} does most of the low-level work.
+ * This <code>Driver</code> converts raw ECal data collections to {@link org.lcsim.event.CalorimeterHit} collections
+ * with energy and time information. The {@link EcalRawConverter} does most of the low-level work.
  * <p>
  * The following input collections are used:
  * <ul>
- * <li>EcalReadoutHits<li>
+ * <li>EcalReadoutHits
+ * <li>
  * <li>EcalReadoutExtraDataRelations</li>
  * <li>EcalRunningPedestals</li>
  * </ul>
@@ -37,21 +38,20 @@ public class EcalRawConverterDriver extends Driver {
 
     private EcalRawConverter converter = null;
     /**
-     * Input collection name (unless runBackwards=true, then it's output).
-     * Can be a {@link org.lcsim.event.RawTrackerHit} or {@link org.lcsim.event.RawCalorimeterHit}
-     * These have ADC and sample time information.
+     * Input collection name (unless runBackwards=true, then it's output). Can be a
+     * {@link org.lcsim.event.RawTrackerHit} or {@link org.lcsim.event.RawCalorimeterHit} These have ADC and sample time
+     * information.
      */
     private String rawCollectionName = "EcalReadoutHits";
-    
-    /**
-     * Output collection name (unless runBackwards=true, then it's input).
-     * Always a {@link org.lcsim.event.CalorimeterHit}
-     * This has energy (GeV) and ns time information.
-     */
-    private String ecalCollectionName = "EcalCalHits";
 
     /**
-     * ecalCollectionName "type" (must match detector-data) 
+     * Output collection name (unless runBackwards=true, then it's input). Always a
+     * {@link org.lcsim.event.CalorimeterHit} This has energy (GeV) and ns time information.
+     */
+    private String ecalCollectionName = "EcalUncalHits";
+
+    /**
+     * ecalCollectionName "type" (must match detector-data)
      */
     private final String ecalReadoutName = "EcalHits";
 
@@ -61,58 +61,52 @@ public class EcalRawConverterDriver extends Driver {
     private static final String extraDataRelationsName = "EcalReadoutExtraDataRelations";
 
     private boolean debug = false;
-    
+
     /**
-     * Hit threshold in GeV.  Anything less will not be put into LCIO. 
+     * Hit threshold in GeV. Anything less will not be put into LCIO.
      */
     private double threshold = Double.NEGATIVE_INFINITY;
-    
+
     /**
-     * Whether to reject bad crystals. 
+     * Whether to reject bad crystals.
      */
     private boolean applyBadCrystalMap = true;
-    
+
     /**
      * Whether to reject bad FADC channels.
      */
     private boolean dropBadFADC = false;
-    
+
     /**
-     * If true, convert ecalCollectionName to rawCollectionName (GeV to ADC).
-     * Else, convert rawCollectionName to ecalCollectionName (ADC to GeV).
+     * If true, convert ecalCollectionName to rawCollectionName (GeV to ADC). Else, convert rawCollectionName to
+     * ecalCollectionName (ADC to GeV).
      */
     private boolean runBackwards = false;
-  
+
     /**
      * 
      */
     private boolean useTimestamps = false;
-    
+
     /**
      * 
      */
     private boolean useTruthTime = false;
-    
+
     /**
-     * Whether to use DAQ config read from EVIO for EcalRawConverter parameters.
-     * Should be completely removed to a standalone class soilely for trigger emulation.
+     * Whether to use DAQ config read from EVIO for EcalRawConverter parameters. Should be completely removed to a
+     * standalone class soilely for trigger emulation.
      */
     private boolean useDAQConfig = false;
 
     /**
-     * Whether to perform "firmware algorithm" on Mode-1 data.
-     * 
-     * If so, this includes finding a threshold crossing, extracting
-     * a pulse time, and integrating over some configurable sample
-     * range inside the window to extract pulse integral.
-     * 
-     * If not, it simply integrates the entire window and makes
-     * no attempt at extracting pulse time.
-     * 
-     * This is poorly named.
+     * Whether to perform "firmware algorithm" on Mode-1 data. If so, this includes finding a threshold crossing,
+     * extracting a pulse time, and integrating over some configurable sample range inside the window to extract pulse
+     * integral. If not, it simply integrates the entire window and makes no attempt at extracting pulse time. This is
+     * poorly named.
      */
     private boolean emulateFirmware = true;
-    
+
     public EcalRawConverterDriver() {
         converter = new EcalRawConverter();
     }
@@ -120,74 +114,61 @@ public class EcalRawConverterDriver extends Driver {
     /**
      * Set to <code>true</code> to use pulse fitting instead of arithmetic integration:<br/>
      */
-    public void setUseFit(boolean useFit) { converter.setUseFit(useFit); }
-    
-    /**
-     * Fix 3-pole function width to be the same for all 442 ECal channels.  Units=samples.
-     */
-    public void setGlobalFixedPulseWidth(double width) { converter.setGlobalFixedPulseWidth(width); }
-    
-    /**
-     * Set to <code>true</code> to fix fitted pulse widths to their channel's mean value:<br/>
-     */
-    public void setFixShapeParameter(boolean fix) { converter.setFixShapeParameter(fix); }
-   
-    /**
-     * Limit threshold crossing range that is candidate for pulse-fitting.   Units=samples.
-     */
-    public void setFitThresholdTimeLo(int sample) { converter.setFitThresholdTimeLo(sample); }
-    public void setFitThresholdTimeHi(int sample) { converter.setFitThresholdTimeHi(sample); }
-    
-    /**
-     * Constrain pulse fit time0 parameter.  Units=samples. 
-     */
-    public void setFitLimitTimeLo(int sample) { converter.setFitLimitTimeLo(sample); }
-    public void setFitLimitTimeHi(int sample) { converter.setFitLimitTimeHi(sample); }
-    
-    /**
-     * Set to <code>true</code> to use the "2014" gain formula:<br/>
-     * <pre>channelGain * adcSum * gainFactor * readoutPeriod</pre>
-     * <p>
-     * Set to <code>false</code> to use the gain formula for the Test Run:
-     * <pre>gain * adcSum * ECalUtils.MeV</pre> 
-     * 
-     * @param use2014Gain True to use 2014 gain formulation.
-     */
-    public void setUse2014Gain(boolean use2014Gain) {
-        converter.setUse2014Gain(use2014Gain);
+    public void setUseFit(boolean useFit) {
+        converter.setUseFit(useFit);
     }
 
     /**
-     * Set to <code>true</code> to apply time walk correction from {@link EcalTimeWalk#correctTimeWalk(double, double)}.
-     * <p>
-     * This is only applicable to Mode-3 data.
-     * 
-     * @param useTimeWalkCorrection True to apply time walk correction.
+     * Fix 3-pole function width to be the same for all 442 ECal channels. Units=samples.
      */
-    public void setUseTimeWalkCorrection(boolean useTimeWalkCorrection) {
-        converter.setUseTimeWalkCorrection(useTimeWalkCorrection);
+    public void setGlobalFixedPulseWidth(double width) {
+        converter.setGlobalFixedPulseWidth(width);
     }
-    
+
+    /**
+     * Set to <code>true</code> to fix fitted pulse widths to their channel's mean value:<br/>
+     */
+    public void setFixShapeParameter(boolean fix) {
+        converter.setFixShapeParameter(fix);
+    }
+
+    /**
+     * Limit threshold crossing range that is candidate for pulse-fitting. Units=samples.
+     */
+    public void setFitThresholdTimeLo(int sample) {
+        converter.setFitThresholdTimeLo(sample);
+    }
+
+    public void setFitThresholdTimeHi(int sample) {
+        converter.setFitThresholdTimeHi(sample);
+    }
+
+    /**
+     * Constrain pulse fit time0 parameter. Units=samples.
+     */
+    public void setFitLimitTimeLo(int sample) {
+        converter.setFitLimitTimeLo(sample);
+    }
+
+    public void setFitLimitTimeHi(int sample) {
+        converter.setFitLimitTimeHi(sample);
+    }
+
     /**
      * Set to <code>true</code> to use a running pedestal calibration from mode 7 data.
      * <p>
-     * The running pedestal values are retrieved from the event collection "EcalRunningPedestals"
-     * which is a <code>Map</code> between {@link org.hps.conditions.ecal.EcalChannel} objects
-     * are their average pedestal.
+     * The running pedestal values are retrieved from the event collection "EcalRunningPedestals" which is a
+     * <code>Map</code> between {@link org.hps.conditions.ecal.EcalChannel} objects are their average pedestal.
      * 
      * @param useRunningPedestal True to use a running pedestal value.
      */
     public void setUseRunningPedestal(boolean useRunningPedestal) {
         converter.setUseRunningPedestal(useRunningPedestal);
     }
-    
-    public void setFixedWidth(boolean fixedWidth){
-        this.converter.setFixedWidth(fixedWidth);
-    }
 
     /**
-     * Set to <code>true</code> to generate a {@link org.lcsim.event.CalorimeterHit} 
-     * collection which is a conversion from energy to raw signals.
+     * Set to <code>true</code> to generate a {@link org.lcsim.event.CalorimeterHit} collection which is a conversion
+     * from energy to raw signals.
      * 
      * @param runBackwards True to run the procedure backwards.
      */
@@ -196,8 +177,7 @@ public class EcalRawConverterDriver extends Driver {
     }
 
     /**
-     * Set to <code>true</code> to drop hits that are mapped to a hard-coded 
-     * bad FADC configuration from the Test Run.
+     * Set to <code>true</code> to drop hits that are mapped to a hard-coded bad FADC configuration from the Test Run.
      * 
      * @param dropBadFADC True to drop hits mapped to a bad FADC.
      */
@@ -206,8 +186,9 @@ public class EcalRawConverterDriver extends Driver {
     }
 
     /**
-     * Set a minimum energy threshold in GeV for created {@link org.lcsim.event.CalorimeterHit}
-     * objects to be written into the output collection.
+     * Set a minimum energy threshold in GeV for created {@link org.lcsim.event.CalorimeterHit} objects to be written
+     * into the output collection.
+     * 
      * @param threshold The minimum energy threshold in GeV.
      */
     public void setThreshold(double threshold) {
@@ -215,15 +196,14 @@ public class EcalRawConverterDriver extends Driver {
     }
 
     /**
-     * Set to <code>true</code> to use Mode-7 emulation in calculations.
-     * False is Mode-3.
+     * Set to <code>true</code> to use Mode-7 emulation in calculations. False is Mode-3.
      * 
      * @param mode7 True to use Mode-7 emulation in calculations.
      */
     public void setEmulateMode7(boolean mode7) {
         converter.setMode7(mode7);
     }
-    
+
     /**
      * Set to <code>true</code> to emulate firmware conversion of Mode-1 to Mode-3/7 data.
      * 
@@ -232,10 +212,9 @@ public class EcalRawConverterDriver extends Driver {
     public void setEmulateFirmware(boolean emulateFirmware) {
         this.emulateFirmware = emulateFirmware;
     }
-    
+
     /**
-     * Set the leading-edge threshold in ADC counts, relative to pedestal, for pulse-finding 
-     * and time determination.
+     * Set the leading-edge threshold in ADC counts, relative to pedestal, for pulse-finding and time determination.
      * <p>
      * Used to convert Mode-1 readout into Mode-3 or Mode-7 data that is usable by clustering.
      * 
@@ -244,24 +223,24 @@ public class EcalRawConverterDriver extends Driver {
     public void setLeadingEdgeThreshold(double threshold) {
         converter.setLeadingEdgeThreshold(threshold);
     }
-    
+
     /**
      * Set the number of samples in the FADC readout window.
      * <p>
-     * This is needed in order to properly pedestal-correct clipped pulses for mode-3 and mode-7.  
-     * It is ignored for mode-1 input, since this data already includes the number of samples.
+     * This is needed in order to properly pedestal-correct clipped pulses for mode-3 and mode-7. It is ignored for
+     * mode-1 input, since this data already includes the number of samples.
      * <p>
-     * A non-positive number disables pulse-clipped pedestals and reverts to the old behavior which 
-     * assumed that the integration range was constant.
+     * A non-positive number disables pulse-clipped pedestals and reverts to the old behavior which assumed that the
+     * integration range was constant.
      * 
      * @param windowSamples The number of samples in the FADC readout window.
      */
     public void setWindowSamples(int windowSamples) {
         converter.setWindowSamples(windowSamples);
     }
-    
+
     /**
-     * Set the integration range in nanoseconds after the threshold crossing. 
+     * Set the integration range in nanoseconds after the threshold crossing.
      * <p>
      * These numbers must be multiples of 4 nanoseconds.
      * <p>
@@ -273,7 +252,7 @@ public class EcalRawConverterDriver extends Driver {
     public void setNsa(int nsa) {
         converter.setNSA(nsa);
     }
-    
+
     /**
      * Set the integration range in nanoseconds before the threshold crossing.
      * <p>
@@ -287,28 +266,19 @@ public class EcalRawConverterDriver extends Driver {
     public void setNsb(int nsb) {
         converter.setNSB(nsb);
     }
-    
+
     /**
-     * Set the maximum number of peaks to search for in the signal, 
-     * which must be between 1 and 3, inclusive.
+     * Set the maximum number of peaks to search for in the signal, which must be between 1 and 3, inclusive.
+     * 
      * @param nPeak The maximum number of peaks to search for in the signal.
      */
     public void setNPeak(int nPeak) {
         converter.setNPeak(nPeak);
     }
-    
-    /**
-     * Set a constant gain factor in the converter for all channels.
-     * @param gain The constant gain value.
-     */
-    public void setGain(double gain) {
-        converter.setGain(gain);
-    }
 
     /**
-     * Set the {@link org.lcsim.event.CalorimeterHit} collection name,
-     * which is used as input in "normal" mode and output when running
-     * "backwards".
+     * Set the {@link org.lcsim.event.CalorimeterHit} collection name, which is used as input in "normal" mode and
+     * output when running "backwards".
      * 
      * @param ecalCollectionName The <code>CalorimeterHit</code> collection name.
      * @see #runBackwards
@@ -318,13 +288,10 @@ public class EcalRawConverterDriver extends Driver {
     }
 
     /**
-     * Set the raw collection name which is used as output in "normal" mode
-     * and input when running "backwards".
+     * Set the raw collection name which is used as output in "normal" mode and input when running "backwards".
      * <p>
-     * Depending on the Driver configuration, this could be a collection
-     * of {@link org.lcsim.event.RawTrackerHit} objects for Mode-1
-     * or {@link org.lcsim.event.RawCalorimeterHit} objects for Mode-3
-     * or Mode-7.
+     * Depending on the Driver configuration, this could be a collection of {@link org.lcsim.event.RawTrackerHit}
+     * objects for Mode-1 or {@link org.lcsim.event.RawCalorimeterHit} objects for Mode-3 or Mode-7.
      * 
      * @param rawCollectionName The raw collection name.
      */
@@ -333,8 +300,8 @@ public class EcalRawConverterDriver extends Driver {
     }
 
     /**
-     * Set to <code>true</code> to ignore data from channels that
-     * are flagged as "bad" in the conditions system.
+     * Set to <code>true</code> to ignore data from channels that are flagged as "bad" in the conditions system.
+     * 
      * @param apply True to ignore bad channels.
      */
     public void setApplyBadCrystalMap(boolean apply) {
@@ -343,52 +310,44 @@ public class EcalRawConverterDriver extends Driver {
 
     /**
      * Set to <code>true</code> to turn on debug output.
+     * 
      * @param debug True to turn on debug output.
      */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-    
-    public void setDisplay(boolean display){
-        this.display = display;
-        converter.setDisplay(display);
-    }
-    private boolean display;
-    
 
     /**
      * Set to <code>true</code> to use timestamp information from the ECal or trigger.
+     * 
      * @param useTimestamps True to use timestamp information.
      */
-    // FIXME: What does this actually do?  What calculations does it affect?  
+    // FIXME: What does this actually do? What calculations does it affect?
     public void setUseTimestamps(boolean useTimestamps) {
         this.useTimestamps = useTimestamps;
     }
 
     /**
      * Set to <code>true</code> to use MC truth information.
+     * 
      * @param useTruthTime True to use MC truth information.
      */
-    // FIXME: What does this actually do?  What calculations does it affect?  
+    // FIXME: What does this actually do? What calculations does it affect?
     public void setUseTruthTime(boolean useTruthTime) {
         this.useTruthTime = useTruthTime;
     }
-    
+
     /**
-     * Sets whether the driver should use the DAQ configuration from
-     * EvIO file for its parameters. If activated, the converter will
-     * obtain gains, thresholds, pedestals, the window size, and the
-     * pulse integration window from the EvIO file. This will replace
-     * and overwrite any manually defined settings.<br/>
+     * Sets whether the driver should use the DAQ configuration from EvIO file for its parameters. If activated, the
+     * converter will obtain gains, thresholds, pedestals, the window size, and the pulse integration window from the
+     * EvIO file. This will replace and overwrite any manually defined settings.<br/>
      * <br/>
-     * Note that if this setting is active, the driver will not output
-     * any data until a DAQ configuration has been read from the data
-     * stream.
-     * @param state - <code>true</code> indicates that the configuration
-     * should be read from the DAQ data in an EvIO file. Setting this
-     * to <code>false</code> will cause the driver to use its regular
-     * manually-defined settings and pull gains and pedestals from the
-     * conditions database.
+     * Note that if this setting is active, the driver will not output any data until a DAQ configuration has been read
+     * from the data stream.
+     * 
+     * @param state - <code>true</code> indicates that the configuration should be read from the DAQ data in an EvIO
+     *            file. Setting this to <code>false</code> will cause the driver to use its regular manually-defined
+     *            settings and pull gains and pedestals from the conditions database.
      */
     public void setUseDAQConfig(boolean state) {
         useDAQConfig = state;
@@ -431,7 +390,8 @@ public class EcalRawConverterDriver extends Driver {
         return (getCrate(hit.getCellID()) == 1 && getSlot(hit.getCellID()) == 3);
     }
 
-    private static double getTimestamp(int system, EventHeader event) { //FIXME: copied from org.hps.readout.ecal.ReadoutTimestamp
+    private static double getTimestamp(int system, EventHeader event) { // FIXME: copied from
+                                                                        // org.hps.readout.ecal.ReadoutTimestamp
         if (event.hasCollection(GenericObject.class, "ReadoutTimestamps")) {
             List<GenericObject> timestamps = event.get(GenericObject.class, "ReadoutTimestamps");
             for (GenericObject timestamp : timestamps) {
@@ -449,12 +409,14 @@ public class EcalRawConverterDriver extends Driver {
     public void process(EventHeader event) {
         // Do not process the event if the DAQ configuration should be
         // used for value, but is not initialized.
-        if(useDAQConfig && !ConfigurationManager.isInitialized()) {
+        if (useDAQConfig && !ConfigurationManager.isInitialized()) {
+            System.out.println("useDaqConfig " + useDAQConfig);
+            System.out.println(ConfigurationManager.isInitialized());
             return;
         }
-        
+
         final int SYSTEM_TRIGGER = 0;
-//        final int SYSTEM_TRACKER = 1;
+        // final int SYSTEM_TRACKER = 1;
         final int SYSTEM_ECAL = 2;
 
         double timeOffset = 0.0;
@@ -469,27 +431,28 @@ public class EcalRawConverterDriver extends Driver {
         }
 
         int flags = 0;
-        flags += 1 << LCIOConstants.RCHBIT_TIME; //store hit time
-        flags += 1 << LCIOConstants.RCHBIT_LONG; //store hit position; this flag has no effect for RawCalorimeterHits
-
+        flags += 1 << LCIOConstants.RCHBIT_TIME; // store hit time
+        flags += 1 << LCIOConstants.RCHBIT_LONG; // store hit position; this flag has no effect for RawCalorimeterHits
+        
         if (!runBackwards) {
             ArrayList<CalorimeterHit> newHits = new ArrayList<CalorimeterHit>();
 
             /*
-             * This is for FADC Mode-1 data:    
+             * This is for FADC Mode-1 data:
              */
             if (event.hasCollection(RawTrackerHit.class, rawCollectionName)) {
+                if(debug) System.out.println("mode1");
                 List<RawTrackerHit> hits = event.get(RawTrackerHit.class, rawCollectionName);
 
                 for (RawTrackerHit hit : hits) {
-           
+
                     ArrayList<CalorimeterHit> newHits2 = new ArrayList<CalorimeterHit>();
                     if (emulateFirmware) {
-                        newHits2.addAll(converter.HitDtoA(event,hit));
+                        newHits2.addAll(converter.HitDtoA(event, hit));
                     } else {
                         newHits2.add(converter.HitDtoA(hit));
                     }
-               
+
                     for (CalorimeterHit newHit : newHits2) {
 
                         // Get the channel data.
@@ -507,17 +470,20 @@ public class EcalRawConverterDriver extends Driver {
                     }
                 }
                 event.put(ecalCollectionName, newHits, CalorimeterHit.class, flags, ecalReadoutName);
+                event.getMetaData(newHits).setTransient(true);
+               
             }
-           
+
             /*
              * This is for FADC pulse mode data (Mode-3 or Mode-7):
              */
-            if (event.hasCollection(RawCalorimeterHit.class, rawCollectionName)) { 
-
+            else if (event.hasCollection(RawCalorimeterHit.class, rawCollectionName)) {
+                if(debug)System.out.println("mode3or7");
                 /*
                  * This is for FADC Mode-7 data:
                  */
-                if (event.hasCollection(LCRelation.class, extraDataRelationsName)) { // extra information available from mode 7 readout
+                if (event.hasCollection(LCRelation.class, extraDataRelationsName)) { // extra information available from
+                    if(debug) System.out.println("mode7");                                                             // mode 7 readout
                     List<LCRelation> extraDataRelations = event.get(LCRelation.class, extraDataRelationsName);
                     for (LCRelation rel : extraDataRelations) {
                         RawCalorimeterHit hit = (RawCalorimeterHit) rel.getFrom();
@@ -526,7 +492,7 @@ public class EcalRawConverterDriver extends Driver {
                         }
                         GenericObject extraData = (GenericObject) rel.getTo();
                         CalorimeterHit newHit;
-                        newHit = converter.HitDtoA(event,hit, extraData, timeOffset);
+                        newHit = converter.HitDtoA(event, hit, extraData, timeOffset);
                         if (newHit.getRawEnergy() > threshold) {
                             if (applyBadCrystalMap && isBadCrystal(newHit)) {
                                 continue;
@@ -545,6 +511,7 @@ public class EcalRawConverterDriver extends Driver {
                     /*
                      * This is for FADC Mode-3 data:
                      */
+                    if(debug) System.out.println("mode3");
                     List<RawCalorimeterHit> hits = event.get(RawCalorimeterHit.class, rawCollectionName);
                     for (RawCalorimeterHit hit : hits) {
                         if (debug) {
@@ -567,6 +534,12 @@ public class EcalRawConverterDriver extends Driver {
                     }
                 }
                 event.put(ecalCollectionName, newHits, CalorimeterHit.class, flags, ecalReadoutName);
+                event.getMetaData(newHits).setTransient(true);
+            }
+            else {
+                if(debug) System.out.println("no raw hit collection");
+                event.put(ecalCollectionName, newHits, CalorimeterHit.class, flags, ecalReadoutName);
+                event.getMetaData(newHits).setTransient(true);
             }
         } else {
             ArrayList<RawCalorimeterHit> newHits = new ArrayList<RawCalorimeterHit>();
@@ -586,9 +559,11 @@ public class EcalRawConverterDriver extends Driver {
                     }
                 }
                 event.put(rawCollectionName, newHits, RawCalorimeterHit.class, flags, ecalReadoutName);
+                event.getMetaData(newHits).setTransient(true);
             }
         }
         
+
     }
 
     /**
