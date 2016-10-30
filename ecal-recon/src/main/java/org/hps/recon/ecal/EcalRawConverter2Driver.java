@@ -19,7 +19,7 @@ import org.lcsim.util.Driver;
 
 /**
  * This <code>Driver</code> converts raw ECal data collections to {@link org.lcsim.event.CalorimeterHit} collections
- * with energy and time information. The {@link EcalRawConverter} does most of the low-level work.
+ * with energy and time information. The {@link EcalRawConverterOld} does most of the low-level work.
  * <p>
  * The following input collections are used:
  * <ul>
