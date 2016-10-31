@@ -118,9 +118,15 @@ public class EcalTimeCorrectionDriver extends Driver {
         }
 
         event.put(this.outputHitsCollectionName, newHits, CalorimeterHit.class, event.getMetaData(hits).getFlags(), ecalReadoutName);
-
+        event.getMetaData(newHits).setTransient(isTransient);
     }
 
+    public void setIsTransient(boolean isTransient){
+        this.isTransient = isTransient;
+    }
+    
+    private boolean isTransient = false;
+    
     /**
      * Perform time walk correction.
      * 
