@@ -18,6 +18,10 @@ public class RandomGaussian {
     private RandomGaussian(){
     }
 
+    public static void setSeed(long seed){
+        if(randNumberGenerator == null) randNumberGenerator = new Random();
+        randNumberGenerator.setSeed(seed);
+    }
     /**
      * Generates a Gaussian distributed number with given mean and standard deviation
      *
