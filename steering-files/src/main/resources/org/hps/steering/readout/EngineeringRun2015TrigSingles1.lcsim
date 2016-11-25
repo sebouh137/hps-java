@@ -11,7 +11,6 @@
         <driver name="EcalReadout"/>
         <driver name="EcalConverter"/>
         <driver name="EcalGains"/>
-        <driver name="EcalTimeCorrection"/>
         <driver name="EcalClustererGTP"/>
         <driver name="SinglesTrigger1"/>
         <driver name="SimpleSVTReadout" />
@@ -54,12 +53,8 @@
         <driver name="EcalGains" type="org.hps.recon.ecal.EcalGainDriver">
        		<inputHitsCollectionName>EcalUncalHits</inputHitsCollectionName>
             <use2014Gain>false</use2014Gain>
-            <outputHitsCollectionName>EcalGainHits</outputHitsCollectionName>
-        </driver>
-        <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
-       		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
             <outputHitsCollectionName>EcalCorrectedHits</outputHitsCollectionName>
-        </driver>  
+        </driver>
         <driver name="EcalClustererGTP" type="org.hps.recon.ecal.cluster.GTPClusterDriver">
             <!--
             Hit Time Coincidence:         +/-16 ns
