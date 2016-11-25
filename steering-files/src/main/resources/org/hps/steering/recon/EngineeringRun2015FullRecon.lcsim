@@ -82,9 +82,10 @@
         <driver name="EcalTimeCorrection" type="org.hps.recon.ecal.EcalTimeCorrectionDriver">
        		<inputHitsCollectionName>EcalGainHits</inputHitsCollectionName>
             <outputHitsCollectionName>EcalCalHits</outputHitsCollectionName>
-        </driver>          
+        </driver>
         <driver name="ReconClusterer" type="org.hps.recon.ecal.cluster.ReconClusterDriver">
             <logLevel>WARNING</logLevel>
+            <inputHitCollectionName>EcalCalHits</inputHitCollectionName>
             <outputClusterCollectionName>EcalClusters</outputClusterCollectionName>
         </driver> 
         <driver name="CopyCluster" type="org.hps.recon.ecal.cluster.CopyClusterCollectionDriver">
