@@ -38,6 +38,7 @@
             <triggerThreshold>12</triggerThreshold>
             <readoutWindow>50</readoutWindow>
             <readoutLatency>77</readoutLatency>
+            <!-- <seedRNG>123456789</seedRNG> -->
             <mode>1</mode>
         </driver>
         <driver name="EcalConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
