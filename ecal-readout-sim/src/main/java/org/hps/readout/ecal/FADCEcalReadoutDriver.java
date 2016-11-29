@@ -9,7 +9,7 @@ import static org.hps.recon.ecal.EcalUtils.riseTime;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -597,8 +597,8 @@ public class FADCEcalReadoutDriver extends EcalReadoutDriver<RawCalorimeterHit> 
     @Override
     protected void initReadout() {
         //initialize buffers
-        triggerPathHitSums = new HashMap<Long, Integer>();
-        triggerPathHitTimes = new HashMap<Long, Integer>();
+        triggerPathHitSums = new LinkedHashMap<Long, Integer>();
+        triggerPathHitTimes = new LinkedHashMap<Long, Integer>();
         triggerPathDelayQueue = new PriorityQueue(20, new TimeComparator());
         resetFADCBuffers();
     }
@@ -618,8 +618,8 @@ public class FADCEcalReadoutDriver extends EcalReadoutDriver<RawCalorimeterHit> 
         if (ecal == null) {
             return false;
         }
-        analogPipelines = new HashMap<Long, RingBuffer>();
-        digitalPipelines = new HashMap<Long, FADCPipeline>();
+        analogPipelines = new LinkedHashMap<Long, RingBuffer>();
+        digitalPipelines = new LinkedHashMap<Long, FADCPipeline>();
         Set<Long> cells = ((HPSEcal3) ecal).getNeighborMap().keySet();
         for (Long cellID : cells) {
             EcalChannelConstants channelData = findChannel(cellID);
@@ -627,6 +627,13 @@ public class FADCEcalReadoutDriver extends EcalReadoutDriver<RawCalorimeterHit> 
             digitalPipelines.put(cellID, new FADCPipeline(pipelineLength, (int) Math.round(channelData.getCalibration().getPedestal())));
         }
         return true;
+    }
+    /**
+     * sets the random number generator seed.  For debugging purposes.
+     * @param seed
+     */
+    public void setSeedRNG(int seed){
+        RandomGaussian.setSeed(seed);
     }
 
     /**
