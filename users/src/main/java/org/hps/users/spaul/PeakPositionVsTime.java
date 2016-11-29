@@ -5,7 +5,6 @@ import java.util.List;
 import hep.aida.IHistogram1D;
 
 import org.hps.conditions.beam.BeamEnergy.BeamEnergyCollection;
-import org.hps.recon.ecal.EcalRawConverter;
 import org.hps.record.triggerbank.AbstractIntData;
 import org.hps.record.triggerbank.TIData;
 import org.lcsim.conditions.ConditionsManager;
