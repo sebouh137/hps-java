@@ -28,32 +28,6 @@ public final class TrackStateDriver extends Driver {
      * Name of the constants denoting the positions of the SVT layers and Ecal face 
      * in the compact description.
      */
-	
- //   private static final String L1t_POSITION_CONSTANT_AXIAL_NAME = "module_L1t_halfmodule_axial_position";
- //   private static final String L1b_POSITION_CONSTANT_AXIAL_NAME = "module_L1b_halfmodule_axial_position"; 
- //   private static final String L2t_POSITION_CONSTANT_AXIAL_NAME = "module_L2t_halfmodule_axial_position";
- //   private static final String L2b_POSITION_CONSTANT_AXIAL_NAME = "module_L2b_halfmodule_axial_position";
- //   private static final String L3t_POSITION_CONSTANT_AXIAL_NAME = "module_L3t_halfmodule_axial_position";
- //   private static final String L3b_POSITION_CONSTANT_AXIAL_NAME = "module_L3b_halfmodule_axial_position";
- //   private static final String L4t_POSITION_CONSTANT_AXIAL_NAME = "module_L4t_halfmodule_axial_position";
- //   private static final String L4b_POSITION_CONSTANT_AXIAL_NAME = "module_L4b_halfmodule_axial_position";
- //   private static final String L5t_POSITION_CONSTANT_AXIAL_NAME = "module_L5t_halfmodule_axial_position";
- //   private static final String L5b_POSITION_CONSTANT_AXIAL_NAME = "module_L5b_halfmodule_axial_position";
- //   private static final String L6t_POSITION_CONSTANT_AXIAL_NAME = "module_L6t_halfmodule_axial_position";
- //   private static final String L6b_POSITION_CONSTANT_AXIAL_NAME = "module_L6b_halfmodule_axial_position";
-    
- //   private static final String L1t_POSITION_CONSTANT_STEREO_NAME = "module_L1t_halfmodule_stereo_position";
- //   private static final String L1b_POSITION_CONSTANT_STEREO_NAME = "module_L1b_halfmodule_stereo_position"; 
- //   private static final String L2t_POSITION_CONSTANT_STEREO_NAME = "module_L2t_halfmodule_stereo_position";
- //   private static final String L2b_POSITION_CONSTANT_STEREO_NAME = "module_L2b_halfmodule_stereo_position";
- //   private static final String L3t_POSITION_CONSTANT_STEREO_NAME = "module_L3t_halfmodule_stereo_position";
- //   private static final String L3b_POSITION_CONSTANT_STEREO_NAME = "module_L3b_halfmodule_stereo_position";
- //   private static final String L4t_POSITION_CONSTANT_STEREO_NAME = "module_L4t_halfmodule_stereo_position";
- //   private static final String L4b_POSITION_CONSTANT_STEREO_NAME = "module_L4b_halfmodule_stereo_position";
- //   private static final String L5t_POSITION_CONSTANT_STEREO_NAME = "module_L5t_halfmodule_stereo_position";
- //   private static final String L5b_POSITION_CONSTANT_STEREO_NAME = "module_L5b_halfmodule_stereo_position";
- //   private static final String L6t_POSITION_CONSTANT_STEREO_NAME = "module_L6t_halfmodule_stereo_position";
- //   private static final String L6b_POSITION_CONSTANT_STEREO_NAME = "module_L6b_halfmodule_stereo_position";
     
     private static final String ECAL_POSITION_CONSTANT_NAME = "ecal_dface";
 
@@ -251,31 +225,34 @@ public final class TrackStateDriver extends Driver {
     
         // If the event doesn't have the specified collection of tracks, throw
         // an exception.
-        if (!event.hasCollection(Track.class, gblTrackCollectionName)) {
-            throw new RuntimeException("Track collection " + gblTrackCollectionName + " doesn't exist");
+        if (!event.hasCollection(Track.class, seedTrackCollectionName)) {
+            throw new RuntimeException("Track collection " + seedTrackCollectionName + " doesn't exist");
         }
         
         // Get the collection of tracks from the event
-        List<Track> tracks = event.get(Track.class, gblTrackCollectionName);
+        List<Track> tracks = event.get(Track.class, seedTrackCollectionName);
         
-        // Loop through all tracks in an event and tweak the track parameters
+        // Loop through all tracks in an event and find/save track states at all the layers
         for (Track track : tracks) { 
-            
-           // Get the track state at the target
-          // TrackState trackState = track.getTrackStates().get(0);
            
-           // *********************************************************************
-           // Extrapolate to layers 1-6, then to the ECal, save track states, 
-           // and write to the event.
+           
+           // ***********************************************************************
+           // Extrapolate to layers 1-6, then to the ECal, and save the track states 
+           // TODO Correct for fringe field effects after layer 10 (stereo pair 5).
            //
-           // *********************************************************************
+           // ***********************************************************************
           
            // get track state at target
            TrackState stateIP = TrackUtils.getTrackStateAtLocation(track, TrackState.AtIP);
            if (stateIP == null) { 
                throw new RuntimeException("IP track state for GBL track was not found");
            }
-    
+     
+           // Force the recomputation of the momentum. This is a hack to force
+           // the persistence of the momentum, otherwise, a bogus momentum
+           // value is used.
+           ((BaseTrack) track).setTrackParameters(stateIP.getParameters(), bField);
+           
            // TODO Replace AtOther place holders with new trackState locations defined in TrackState class
            
            // Get the track state at L1 (axial), extrapolated from IP
@@ -362,26 +339,6 @@ public final class TrackStateDriver extends Driver {
            
         } // loop over tracks
    
-        // If the event doesn't have the specified collection of tracks, throw
-        // an exception.
-        if (!event.hasCollection(Track.class, seedTrackCollectionName)) {
-            throw new RuntimeException("Track collection " + seedTrackCollectionName + " doesn't exist");
-        }
         
-        // Get the collection of seed tracks from the event and force 
-        // the recomputation of the momentum.  This is a hack to force
-        // the persistence of the momentum, otherwise, a bogus momentum
-        // value is used.
-        List<Track> seedTracks = event.get(Track.class, seedTrackCollectionName);
-        for (Track seedTrack : seedTracks) { 
-            
-            // Get the track state at the target
-            TrackState trackState = seedTrack.getTrackStates().get(0);
-            
-            // Force re-computation of momentum using the correct B-field, 
-            // otherwise, a bogus value is returned. 
-            ((BaseTrack) seedTrack).setTrackParameters(seedTrack.getTrackStates().get(0).getParameters(), bField);
-        }
-        
-    }
+    } // Process event
 }
