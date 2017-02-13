@@ -25,7 +25,7 @@ import org.lcsim.util.Driver;
 public final class TrackStateDriver extends Driver {
 
     /** 
-     * Name of the constants denoting the positions of the SVT layers and Ecal face 
+     * Name of the constants denoting the position of the Ecal face 
      * in the compact description.
      */
     
