@@ -22,7 +22,7 @@
         <driver name="RawTrackerHitSensorSetup"/>
         <driver name="RawTrackerHitFitterDriver" />
         <driver name="TrackerHitDriver"/>
-        <driver name="HelicalTrackHitDriver"/>     
+        <driver name="HelicalTrackHitDriver"/>             
         <!-- 
             Will run track finding algorithm using layers 345 as a seed, 
             layer 2 to confirm and layers 1 and 6 to extend. The collection
@@ -123,6 +123,7 @@
         </driver>       
         <driver name="MergeTrackCollections" type="org.hps.recon.tracking.MergeTrackCollections" />
         <driver name="GBLRefitterDriver" type="org.hps.recon.tracking.gbl.GBLRefitterDriver"/>
+            
         <driver name="EcalRawConverter" type="org.hps.recon.ecal.EcalRawConverterDriver">
             <ecalCollectionName>EcalCalHits</ecalCollectionName>
             <fixShapeParameter>true</fixShapeParameter>
